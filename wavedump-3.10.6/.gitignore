@@ -1,0 +1,7 @@
+/config.log
+/config.status
+/Makefile
+/src/Makefile
+/src/.deps
+/src/wavedump
+*.o
