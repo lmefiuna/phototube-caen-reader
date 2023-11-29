@@ -82,6 +82,8 @@
 #define NPOINTS 2
 #define NACQS   50
 
+#define CAEN_DGTZ_5730_DYNAMIC_INPUT_RANGE_BASE_REGISTER 0x1028
+
 /* ###########################################################################
    Typedefs
    ###########################################################################
@@ -91,6 +93,12 @@ typedef enum {
 	OFF_BINARY=	0x00000001,			// Bit 0: 1 = BINARY, 0 =ASCII
 	OFF_HEADER= 0x00000002,			// Bit 1: 1 = include header, 0 = just samples data
 } OUTFILE_FLAGS;
+
+typedef enum
+{
+    RANGE_2_VPP = 0,
+    RANGE_0_5_VPP = 1,
+} INPUT_DYNAMIC_RANGE;
 
 typedef struct{
 	float cal[MAX_SET];
@@ -117,6 +125,7 @@ typedef struct {
     uint16_t EnableMask;
     char GnuPlotPath[1000];
     CAEN_DGTZ_TriggerMode_t ChannelTriggerMode[MAX_SET];
+    INPUT_DYNAMIC_RANGE ChannelInputDynamicRange[MAX_SET];
 	CAEN_DGTZ_PulsePolarity_t PulsePolarity[MAX_SET];
     uint32_t DCoffset[MAX_SET];
     int32_t  DCoffsetGrpCh[MAX_SET][MAX_SET];

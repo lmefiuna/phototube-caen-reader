@@ -274,6 +274,33 @@ int GetMoreBoardInfo(int handle, CAEN_DGTZ_BoardInfo_t BoardInfo, WaveDumpConfig
     default:
         return -1;
     }
+
+    if (BoardInfo.FamilyCode == CAEN_DGTZ_XX730_FAMILY_CODE)
+    {
+        uint32_t data;
+        uint32_t targetRegister;
+        uint8_t i;
+        for (i = 0; i < WDcfg->Nch; ++i)
+        {
+            targetRegister = CAEN_DGTZ_5730_DYNAMIC_INPUT_RANGE_BASE_REGISTER + i * 0x100;
+            ret = CAEN_DGTZ_ReadRegister(handle, targetRegister, &data);
+            if (ret != CAEN_DGTZ_Success)
+            {
+                return CAEN_DGTZ_CommError;
+            }
+            
+            WDcfg->ChannelInputDynamicRange[i] = (data&0x0001) == 1 ? RANGE_0_5_VPP : RANGE_2_VPP;
+        }
+    }
+    else
+    {
+        uint8_t i;
+        for (i = 0; i < WDcfg->Nch; ++i)
+        {
+            WDcfg->ChannelInputDynamicRange[i] = -1;
+        }
+    }
+
     return 0;
 }
 
@@ -1543,32 +1570,37 @@ int WriteOutputFiles(WaveDumpConfig_t *WDcfg, WaveDumpRun_t *WDrun, CAEN_DGTZ_Ev
         // Check the file format type
         if( WDcfg->OutFileFlags& OFF_BINARY) {
             // Binary file format
-            uint32_t BinHeader[6];
-            BinHeader[0] = (WDcfg->Nbit == 8) ? Size + 6*sizeof(*BinHeader) : Size*2 + 6*sizeof(*BinHeader);
-            BinHeader[1] = EventInfo->BoardId;
-            BinHeader[2] = EventInfo->Pattern;
-            BinHeader[3] = ch;
-            BinHeader[4] = EventInfo->EventCounter;
-            BinHeader[5] = EventInfo->TriggerTimeTag;
             if (!WDrun->fout[ch]) {
                 char fname[100];
                 sprintf(fname, "%swave%d.dat", path,ch);
-                if ((WDrun->fout[ch] = fopen(fname, "wb")) == NULL)
+                if ((WDrun->fout[ch] = fopen(fname, "ab")) == NULL)
                     return -1;
             }
+
             if( WDcfg->OutFileFlags & OFF_HEADER) {
                 // Write the Channel Header
-                if(fwrite(BinHeader, sizeof(*BinHeader), 6, WDrun->fout[ch]) != 6) {
-                    // error writing to file
-                    fclose(WDrun->fout[ch]);
-                    WDrun->fout[ch]= NULL;
-                    return -1;
-                }
+                fprintf(WDrun->fout[ch], "Record Length: %d\n", Size);
+                fprintf(WDrun->fout[ch], "BoardID: %2d\n", EventInfo->BoardId);
+                fprintf(WDrun->fout[ch], "Channel: %d\n", ch);
+                fprintf(WDrun->fout[ch], "Event Number: %d\n", EventInfo->EventCounter);
+                fprintf(WDrun->fout[ch], "Pattern: 0x%04X\n", EventInfo->Pattern & 0xFFFF);
+                fprintf(WDrun->fout[ch], "Trigger Time Stamp: %u\n", EventInfo->TriggerTimeTag);
+                fprintf(WDrun->fout[ch], "DC offset (DAC): 0x%04X\n", WDcfg->DCoffset[ch] & 0xFFFF);
+                fprintf(WDrun->fout[ch], "Pulse Polarity: %s\n", WDcfg->PulsePolarity[ch] == CAEN_DGTZ_PulsePolarityPositive ? "Positive" : "Negative" );
+                fprintf(WDrun->fout[ch], "Input Dynamic Range (Vpp): %.02f\n", WDcfg->ChannelInputDynamicRange[ch] == RANGE_0_5_VPP ? 0.5f : 2.0f );
             }
+
             if (WDcfg->Nbit == 8)
+            {
                 ns = (int)fwrite(Event8->DataChannel[ch], 1, Size, WDrun->fout[ch]);
+            }
             else
-                ns = (int)fwrite(Event16->DataChannel[ch] , 1 , Size*2, WDrun->fout[ch]) / 2;
+            {
+                ns = (int)fwrite(Event16->DataChannel[ch], 1, Size * 2, WDrun->fout[ch]) / 2;
+            }
+
+            fprintf(WDrun->fout[ch], "\n");
+
             if (ns != Size) {
                 // error writing to file
                 fclose(WDrun->fout[ch]);
@@ -1592,6 +1624,8 @@ int WriteOutputFiles(WaveDumpConfig_t *WDcfg, WaveDumpRun_t *WDrun, CAEN_DGTZ_Ev
                 fprintf(WDrun->fout[ch], "Pattern: 0x%04X\n", EventInfo->Pattern & 0xFFFF);
                 fprintf(WDrun->fout[ch], "Trigger Time Stamp: %u\n", EventInfo->TriggerTimeTag);
                 fprintf(WDrun->fout[ch], "DC offset (DAC): 0x%04X\n", WDcfg->DCoffset[ch] & 0xFFFF);
+                fprintf(WDrun->fout[ch], "Pulse Polarity: %s\n", WDcfg->PulsePolarity[ch] == CAEN_DGTZ_PulsePolarityPositive ? "Positive" : "Negative" );
+                fprintf(WDrun->fout[ch], "Input Dynamic Range (Vpp): %.02f\n", WDcfg->ChannelInputDynamicRange[ch] == RANGE_0_5_VPP ? 0.5f : 2.0f );
             }
             for(j=0; j<Size; j++) {
                 if (WDcfg->Nbit == 8)
