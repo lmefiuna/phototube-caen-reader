@@ -39,22 +39,18 @@
 
 
 
-  Description:
-  -----------------------------------------------------------------------------
-
-
-
   Syntax
   -----------------------------------------------------------------------------
-  wavedump [ConfigFile]
-  Default config file is "/etc/wavedump/WaveDumpConfig.txt"
-  or "/etc/wavedump/WaveDumpConfig_X742.txt" for X742 boards,
-  or "/etc/wavedump/WaveDumpConfig_X740.txt" for X740 boards.
+  wavedump ConfigFile TempOutputDirPath
+
+
+  LME Customization
+  -----------------------------------------------------------------------------
+  - Default ContinuousWrite and WDRun.
+  - Change binary header for ascii header in binary file output.
+  - Output file names contain seconds since epoch and channel.
+  - Masked TriggerTimeStamp with 0x7FFFFFFF (ignore overflow bit).
+  - Close file every WINDOW_ACQUISITION_SECONDS and open a new one.
 
  
-  Keyword list and syntax for the configuration file:
-  -----------------------------------------------------------------------------
-  For configuration file syntax please refer to the Wavedump Manual.
-
-  -----------------------------------------------------------------------------
-
+  

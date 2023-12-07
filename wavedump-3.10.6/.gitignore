@@ -5,3 +5,4 @@
 /src/.deps
 /src/wavedump
 *.o
+/PlotData.txt
