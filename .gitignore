@@ -1,6 +1,8 @@
 /output_data
+/output_data_bak
 /config
 /logs
 .caen-venv
 __pycache__
 phototube_energy.csv
+*.dat

@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/env python
 import numpy as np
 
 HEADER_FIELDS_COUNT = 9

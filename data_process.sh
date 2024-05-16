@@ -11,9 +11,12 @@ while true; do
   do
     lsofUnprocessedFile=$(lsof $unprocessedFile)
     if [[ $lsofUnprocessedFile ]]; then
+      echo "File $unprocessedFile still used by another process"
       true
     else
-      echo -n "$(date)  " && ./process_output.py $unprocessedFile $CSV_OUTPUT_PATH >> $WATCHER_LOG_PATH 2>&1
+      grep --text -v 'RecordLength:10RecordLength:100' $unprocessedFile > "$unprocessedFile.tmp"
+      mv "$unprocessedFile.tmp" $unprocessedFile
+      echo -n "$(date)  " && ./process_output.py $unprocessedFile $CSV_OUTPUT_PATH #>> $WATCHER_LOG_PATH 2>&1
       if [ $? -eq 0 ]; then
         # if [ true ]; then
         filename=$(basename "$unprocessedFile")
